@@ -1,6 +1,6 @@
-use calamine::{open_workbook, DataType, Reader, Xlsx};
+use calamine::{open_workbook, Data, Reader, Xlsx};
 use std::collections::HashMap;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use walkdir::WalkDir;
 use crate::commands::types::{ColumnMapping, ScanResult};
 
@@ -74,14 +74,22 @@ async fn convert_single_file(
         tokio::fs::create_dir_all(parent).await?;
     }
 
+    // 克隆数据以便移动到 blocking task 中
+    let file_path = file_path.to_string();
+    let target_path_buf = target_path.to_path_buf();
+    let target_path_buf_clone = target_path_buf.clone();
+    let mappings = mappings.clone();
+
     // 处理 Excel 文件
-    process_excel_file(file_path, &target_path, mappings).await?;
+    tokio::task::spawn_blocking(move || {
+        process_excel_file(&file_path, &target_path_buf, &mappings)
+    }).await??;
     
-    Ok(target_path.to_string_lossy().to_string())
+    Ok(target_path_buf_clone.to_string_lossy().to_string())
 }
 
 /// 处理 Excel 文件内容
-async fn process_excel_file(
+fn process_excel_file(
     source_path: &str,
     target_path: &Path,
     mappings: &HashMap<String, String>,
@@ -90,11 +98,11 @@ async fn process_excel_file(
     let mut workbook: Xlsx<_> = open_workbook(source_path)?;
     
     // 使用 xlsxwriter 创建新文件
-    let mut new_workbook = xlsxwriter::Workbook::new(target_path.to_str().unwrap())?;
+    let new_workbook = xlsxwriter::Workbook::new(target_path.to_str().unwrap())?;
     
     // 处理每个工作表
     for sheet_name in workbook.sheet_names().to_owned() {
-        if let Some(Ok(range)) = workbook.worksheet_range(&sheet_name) {
+        if let Ok(range) = workbook.worksheet_range(&sheet_name) {
             let mut worksheet = new_workbook.add_worksheet(Some(&sheet_name))?;
             
             let mut row_index = 0u32;
@@ -117,11 +125,6 @@ async fn process_excel_file(
                 }
                 
                 row_index += 1;
-                
-                // 每处理1000行就让出控制权，避免阻塞
-                if row_index % 1000 == 0 {
-                    tokio::task::yield_now().await;
-                }
             }
         }
     }
@@ -130,18 +133,18 @@ async fn process_excel_file(
     Ok(())
 }
 
-/// 将 DataType 转换为字符串
-fn cell_to_string(cell: &DataType) -> String {
+/// 将 Data 转换为字符串
+fn cell_to_string(cell: &Data) -> String {
     match cell {
-        DataType::String(s) => s.clone(),
-        DataType::Int(i) => i.to_string(),
-        DataType::Float(f) => f.to_string(),
-        DataType::Bool(b) => b.to_string(),
-        DataType::DateTime(dt) => dt.to_string(),
-        DataType::DateTimeIso(dt) => dt.to_string(),
-        DataType::DurationIso(d) => d.to_string(),
-        DataType::Error(e) => format!("ERROR: {:?}", e),
-        DataType::Empty => String::new(),
+        Data::String(s) => s.clone(),
+        Data::Int(i) => i.to_string(),
+        Data::Float(f) => f.to_string(),
+        Data::Bool(b) => b.to_string(),
+        Data::DateTime(dt) => dt.to_string(),
+        Data::DateTimeIso(dt) => dt.to_string(),
+        Data::DurationIso(d) => d.to_string(),
+        Data::Error(e) => format!("ERROR: {:?}", e),
+        Data::Empty => String::new(),
     }
 }
 
