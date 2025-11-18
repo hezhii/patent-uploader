@@ -1,7 +1,5 @@
 <template>
-  <div class="card">
-    <h3 class="text-lg font-semibold mb-4">服务器配置</h3>
-    
+  <div>
     <form @submit.prevent="handleSubmit" class="space-y-4">
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">
@@ -86,6 +84,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
 import { httpClient } from '@/utils/httpClient';
+import { useLoggerStore } from '@/stores/logger';
 import type { ServerConfig, ConnectionStatus } from '@/types';
 
 interface Props {
@@ -101,6 +100,7 @@ interface Emits {
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
+const loggerStore = useLoggerStore();
 const localConfig = ref<ServerConfig>({ ...props.modelValue });
 const showPassword = ref(false);
 const testing = ref(false);
@@ -154,6 +154,7 @@ async function testConnection() {
   
   testing.value = true;
   connectionStatus.value = null;
+  loggerStore.info('开始测试服务器连接...');
   
   try {
     httpClient.setBaseUrl(localConfig.value.serverUrl);
@@ -164,19 +165,23 @@ async function testConnection() {
         type: 'success',
         message: '服务器连接正常'
       };
+      loggerStore.success(`服务器连接测试成功: ${localConfig.value.serverUrl}`);
       emit('test', true);
     } else {
       connectionStatus.value = {
         type: 'error',
         message: '无法连接到服务器'
       };
+      loggerStore.error(`服务器连接测试失败: ${localConfig.value.serverUrl}`);
       emit('test', false);
     }
   } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : '连接测试失败';
     connectionStatus.value = {
       type: 'error',
-      message: error instanceof Error ? error.message : '连接测试失败'
+      message: errorMsg
     };
+    loggerStore.error(`服务器连接测试异常: ${errorMsg}`);
     emit('test', false);
   } finally {
     testing.value = false;
@@ -186,11 +191,16 @@ async function testConnection() {
 function handleSubmit() {
   if (!isFormValid.value) return;
   
+  loggerStore.info(`保存服务器配置: ${localConfig.value.serverUrl}, 用户: ${localConfig.value.username}`);
+  
+  // 保存配置到 store
   emit('save', { ...localConfig.value });
   
   connectionStatus.value = {
     type: 'success',
     message: '配置已保存'
   };
+  
+  loggerStore.success('服务器配置保存成功');
 }
 </script>

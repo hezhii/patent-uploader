@@ -1,4 +1,4 @@
-import type { LoginRequest, LoginResponse, UploadResponse } from '@/types';
+import type { LoginRequest, LoginResponse } from '@/types';
 
 export class HttpClient {
   private baseUrl: string = '';
@@ -31,61 +31,9 @@ export class HttpClient {
     }
   }
 
-  async uploadFile(file: File, onProgress?: (progress: number) => void): Promise<UploadResponse> {
-    if (!this.token) {
-      throw new Error('请先登录');
-    }
-
-    return new Promise((resolve, reject) => {
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const xhr = new XMLHttpRequest();
-
-      // 监听上传进度
-      if (onProgress) {
-        xhr.upload.addEventListener('progress', (event) => {
-          if (event.lengthComputable) {
-            const progress = (event.loaded / event.total) * 100;
-            onProgress(Math.round(progress));
-          }
-        });
-      }
-
-      // 监听请求完成
-      xhr.addEventListener('load', () => {
-        if (xhr.status >= 200 && xhr.status < 300) {
-          try {
-            const result: UploadResponse = JSON.parse(xhr.responseText);
-            resolve(result);
-          } catch (error) {
-            reject(new Error('解析响应数据失败'));
-          }
-        } else {
-          reject(new Error(`上传失败: ${xhr.status} ${xhr.statusText}`));
-        }
-      });
-
-      // 监听请求错误
-      xhr.addEventListener('error', () => {
-        reject(new Error('网络错误'));
-      });
-
-      // 监听请求中断
-      xhr.addEventListener('abort', () => {
-        reject(new Error('上传被中断'));
-      });
-
-      // 设置请求头和发送请求
-      xhr.open('POST', `${this.baseUrl}/admin/patent/import`);
-      xhr.setRequestHeader('Authorization', `Bearer ${this.token}`);
-      xhr.send(formData);
-    });
-  }
-
   async testConnection(): Promise<boolean> {
     try {
-      const response = await fetch(`${this.baseUrl}/auth/admin/login`, {
+      await fetch(`${this.baseUrl}/auth/admin/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

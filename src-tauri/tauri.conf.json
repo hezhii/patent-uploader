@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "patentupload",
+        "title": "专利文件导入工具",
         "width": 800,
         "height": 600
       }

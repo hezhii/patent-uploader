@@ -149,7 +149,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, watch, ref } from 'vue';
+import { computed, watch } from 'vue';
 import { useFileUpload } from '@/composables/useFileUpload';
 
 interface Props {
@@ -170,14 +170,16 @@ const {
   overallProgress,
   completedCount,
   failedCount,
+  isPaused,
   initializeUpload,
   startUpload,
+  pauseUpload,
   retryUpload,
   clearUploadHistory,
 } = useFileUpload();
 
 // 本地状态
-const uploadPaused = ref(false);
+const uploadPaused = computed(() => isPaused.value);
 
 // 计算属性
 const pendingCount = computed(() => 
@@ -193,11 +195,6 @@ async function handleStartUpload() {
   } catch (error) {
     emit('error', error instanceof Error ? error.message : '上传失败');
   }
-}
-
-function pauseUpload() {
-  uploadPaused.value = !uploadPaused.value;
-  // 这里可以添加暂停逻辑，目前只是状态切换
 }
 
 function clearCompleted() {

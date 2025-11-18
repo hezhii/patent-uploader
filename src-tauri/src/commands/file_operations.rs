@@ -39,3 +39,19 @@ pub async fn get_converted_files(target_path: String) -> Result<Vec<String>, Str
         .await
         .map_err(|e| e.to_string())
 }
+
+/// 保存日志文件
+#[command]
+pub async fn save_log_file(path: String, content: String) -> Result<(), String> {
+    tracing::info!("保存日志文件到: {}", path);
+    
+    tokio::fs::write(&path, content)
+        .await
+        .map_err(|e| {
+            tracing::error!("保存日志文件失败: {}", e);
+            e.to_string()
+        })?;
+    
+    tracing::info!("日志文件保存成功");
+    Ok(())
+}

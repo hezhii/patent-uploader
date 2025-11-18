@@ -5,7 +5,7 @@
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center h-16">
           <div class="flex items-center">
-            <h1 class="text-xl font-semibold text-gray-900">专利文件上传系统</h1>
+            <h1 class="text-xl font-semibold text-gray-900">专利文件导入工具</h1>
             <div v-if="connectionStatus" class="ml-4 flex items-center">
               <div 
                 class="w-2 h-2 rounded-full mr-2"
@@ -24,7 +24,7 @@
             <span class="text-sm text-gray-500">当前步骤: {{ currentStepName }}</span>
             <div class="flex space-x-1">
               <div 
-                v-for="(step, index) in steps"
+                v-for="(_step, index) in steps"
                 :key="index"
                 class="w-2 h-2 rounded-full"
                 :class="{
@@ -47,38 +47,62 @@
         <div class="lg:col-span-2 space-y-8">
           
           <!-- 步骤1: 服务器配置 -->
-          <div v-show="currentStep >= 0">
-            <ServerConfig
-              v-model="store.serverConfig"
-              @save="handleServerConfigured"
-              @test="handleConnectionTest"
-            />
+          <div v-show="currentStep >= 0" class="card">
+            <div class="flex justify-between items-center mb-4 cursor-pointer" @click="toggleStep(0)">
+              <h3 class="text-lg font-semibold">1. 服务器配置</h3>
+              <span class="text-xl">{{ expandedSteps[0] ? '▼' : '▶' }}</span>
+            </div>
+            <div v-show="expandedSteps[0]">
+              <ServerConfig
+                v-model="store.serverConfig"
+                @save="handleServerConfigured"
+                @test="handleConnectionTest"
+              />
+            </div>
           </div>
 
           <!-- 步骤2: 列映射配置 -->
-          <div v-show="currentStep >= 1">
-            <ColumnMapping
-              v-model="store.columnMappings"
-              @save="handleMappingsUpdated"
-            />
+          <div v-show="currentStep >= 1" class="card">
+            <div class="flex justify-between items-center mb-4 cursor-pointer" @click="toggleStep(1)">
+              <h3 class="text-lg font-semibold">2. 列名映射配置</h3>
+              <span class="text-xl">{{ expandedSteps[1] ? '▼' : '▶' }}</span>
+            </div>
+            <div v-show="expandedSteps[1]">
+              <ColumnMapping
+                v-model="store.columnMappings"
+                @save="handleMappingsUpdated"
+              />
+            </div>
           </div>
 
           <!-- 步骤3: 文件操作 -->
-          <div v-show="currentStep >= 2">
-            <FileOperations
-              :column-mappings="store.columnMappings"
-              @converted="handleFilesConverted"
-              @error="handleError"
-            />
+          <div v-show="currentStep >= 2" class="card">
+            <div class="flex justify-between items-center mb-4 cursor-pointer" @click="toggleStep(2)">
+              <h3 class="text-lg font-semibold">3. 文件处理</h3>
+              <span class="text-xl">{{ expandedSteps[2] ? '▼' : '▶' }}</span>
+            </div>
+            <div v-show="expandedSteps[2]">
+              <FileOperations
+                :column-mappings="store.columnMappings"
+                @converted="handleFilesConverted"
+                @error="handleError"
+              />
+            </div>
           </div>
 
           <!-- 步骤4: 文件上传 -->
-          <div v-show="currentStep >= 3">
-            <FileUpload
-              :files="convertedFiles"
-              @complete="handleUploadComplete"
-              @error="handleError"
-            />
+          <div v-show="currentStep >= 3" class="card">
+            <div class="flex justify-between items-center mb-4 cursor-pointer" @click="toggleStep(3)">
+              <h3 class="text-lg font-semibold">4. 文件上传</h3>
+              <span class="text-xl">{{ expandedSteps[3] ? '▼' : '▶' }}</span>
+            </div>
+            <div v-show="expandedSteps[3]">
+              <FileUpload
+                :files="convertedFiles"
+                @complete="handleUploadComplete"
+                @error="handleError"
+              />
+            </div>
           </div>
 
           <!-- 完成状态 -->
@@ -87,12 +111,12 @@
               <div class="text-6xl mb-4">🎉</div>
               <h2 class="text-2xl font-bold text-green-600 mb-2">上传完成！</h2>
               <p class="text-gray-600 mb-4">所有文件已成功上传到服务器</p>
-              <button
+              <!-- <button
                 @click="resetWorkflow"
                 class="btn-primary"
               >
                 重新开始
-              </button>
+              </button> -->
             </div>
           </div>
         </div>
@@ -104,7 +128,7 @@
             <h3 class="text-lg font-semibold mb-4">操作指南</h3>
             <div class="space-y-3 text-sm">
               <div 
-                v-for="(step, index) in steps"
+                v-for="(_step, index) in steps"
                 :key="index"
                 class="flex items-center space-x-2"
                 :class="{
@@ -123,13 +147,13 @@
                 >
                   {{ index + 1 }}
                 </span>
-                <span>{{ step.name }}</span>
+                <span>{{ steps[index].name }}</span>
               </div>
             </div>
           </div>
 
           <!-- 日志查看器 -->
-          <LogViewer ref="logViewer" />
+          <LogViewer />
         </div>
       </div>
     </main>
@@ -152,14 +176,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import { useAppStore } from '@/stores';
+import { useLoggerStore } from '@/stores/logger';
 import ServerConfig from '@/components/ServerConfig.vue';
 import ColumnMapping from '@/components/ColumnMapping.vue';
 import FileOperations from '@/components/FileOperations.vue';
 import FileUpload from '@/components/FileUpload.vue';
 import LogViewer from '@/components/LogViewer.vue';
-import type { ConnectionStatus, ColumnMapping as ColumnMappingType } from '@/types';
+import type { ConnectionStatus } from '@/types';
 
 // 步骤定义
 const steps = [
@@ -173,12 +199,26 @@ const steps = [
 // 使用 Pinia store
 const store = useAppStore();
 
+// 使用 logger store
+const loggerStore = useLoggerStore();
+const { addLog } = loggerStore;
+
 // 状态管理
 const currentStep = ref(0);
 const convertedFiles = ref<File[]>([]);
 const connectionStatus = ref<ConnectionStatus | null>(null);
 const errorMessage = ref('');
-const logViewer = ref();
+
+// 步骤展开/收起状态
+const expandedSteps = ref<Record<number, boolean>>({
+  0: true,  // 服务器配置默认展开
+  1: false,
+  2: false,
+  3: false
+});
+
+// Rust 日志监听器
+let unlistenRustLog: UnlistenFn | null = null;
 
 // 计算属性
 const currentStepName = computed(() => {
@@ -187,8 +227,14 @@ const currentStepName = computed(() => {
 
 // 事件处理函数
 function handleServerConfigured() {
-  addLog('success', '服务器配置已完成');
+  // 保存到 store 并持久化
+  store.saveServerConfig(store.serverConfig);
+  addLog('success', '服务器配置已完成并保存');
   currentStep.value = Math.max(currentStep.value, 1);
+  
+  // 收起当前步骤，展开下一步
+  expandedSteps.value[0] = false;
+  expandedSteps.value[1] = true;
 }
 
 function handleConnectionTest(success: boolean) {
@@ -202,14 +248,28 @@ function handleConnectionTest(success: boolean) {
 }
 
 function handleMappingsUpdated() {
-  addLog('info', '列映射配置已更新');
+  // 保存到 store 并持久化
+  store.saveColumnMappings(store.columnMappings);
+  addLog('info', `列映射配置已更新并保存，共 ${store.columnMappings.length} 个映射`);
   currentStep.value = Math.max(currentStep.value, 2);
+  
+  // 收起当前步骤，展开下一步
+  expandedSteps.value[1] = false;
+  expandedSteps.value[2] = true;
+}
+
+function toggleStep(stepIndex: number) {
+  expandedSteps.value[stepIndex] = !expandedSteps.value[stepIndex];
 }
 
 function handleFilesConverted(files: File[]) {
   convertedFiles.value = files;
   addLog('success', `文件转换完成，共 ${files.length} 个文件`);
   currentStep.value = Math.max(currentStep.value, 3);
+  
+  // 收起当前步骤，展开下一步
+  expandedSteps.value[2] = false;
+  expandedSteps.value[3] = true;
 }
 
 function handleUploadComplete() {
@@ -236,12 +296,20 @@ function resetWorkflow() {
   addLog('info', '工作流程已重置');
 }
 
-function addLog(level: 'info' | 'warn' | 'error' | 'success', message: string) {
-  if (logViewer.value) {
-    logViewer.value.addLog(level, message);
-  }
-}
+// 监听 Rust 日志事件
+onMounted(async () => {
+  addLog('info', '系统已启动，请配置服务器连接');
+  
+  // 监听来自 Rust 的日志
+  unlistenRustLog = await listen<{timestamp: number, level: string, message: string}>('rust-log', (event) => {
+    const { level, message } = event.payload;
+    addLog(level as 'info' | 'warn' | 'error' | 'success', `[Rust] ${message}`);
+  });
+});
 
-// 初始化日志
-addLog('info', '系统已启动，请配置服务器连接');
+onUnmounted(() => {
+  if (unlistenRustLog) {
+    unlistenRustLog();
+  }
+});
 </script>

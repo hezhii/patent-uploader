@@ -1,4 +1,8 @@
+pub mod logger;
+
 use std::path::Path;
+
+pub use logger::TauriLayer;
 
 /// 格式化文件大小
 pub fn format_file_size(size: u64) -> String {

@@ -1,22 +1,19 @@
 <template>
-  <div class="card">
-    <div class="flex justify-between items-center mb-4">
-      <h3 class="text-lg font-semibold">列名映射配置</h3>
-      <div class="space-x-2">
-        <button
-          @click="importMappings"
-          class="btn-secondary text-sm"
-        >
-          导入配置
-        </button>
-        <button
-          @click="exportMappings"
-          class="btn-secondary text-sm"
-          :disabled="localMappings.length === 0"
-        >
-          导出配置
-        </button>
-      </div>
+  <div>
+    <div class="flex justify-end mb-4 space-x-2">
+      <button
+        @click="importMappings"
+        class="btn-secondary text-sm"
+      >
+        导入配置
+      </button>
+      <button
+        @click="exportMappings"
+        class="btn-secondary text-sm"
+        :disabled="localMappings.length === 0"
+      >
+        导出配置
+      </button>
     </div>
 
     <!-- 映射列表 -->
@@ -74,19 +71,27 @@
     </div>
 
     <!-- 批量操作 -->
-    <div v-if="localMappings.length > 0" class="mt-6 pt-4 border-t border-gray-200">
+    <div class="mt-6 pt-4 border-t border-gray-200">
       <div class="flex justify-between items-center">
         <span class="text-sm text-gray-600">
-          已配置 {{ localMappings.length }} 个映射
+          {{ localMappings.length > 0 ? `已配置 ${localMappings.length} 个映射` : '可以选择跳过此步骤' }}
         </span>
         <div class="space-x-2">
           <button
+            v-if="localMappings.length > 0"
             @click="clearAllMappings"
             class="text-red-500 hover:text-red-700 text-sm"
           >
             清空所有
           </button>
           <button
+            @click="skipMappings"
+            class="btn-secondary text-sm"
+          >
+            跳过配置
+          </button>
+          <button
+            v-if="localMappings.length > 0"
             @click="saveMappings"
             class="btn-primary text-sm"
           >
@@ -109,6 +114,7 @@
 
 <script setup lang="ts">
 import { ref, watch } from 'vue';
+import { useLoggerStore } from '@/stores/logger';
 import type { ColumnMapping } from '@/types';
 
 interface Props {
@@ -123,6 +129,7 @@ interface Emits {
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
+const loggerStore = useLoggerStore();
 const localMappings = ref<ColumnMapping[]>([...props.modelValue]);
 const fileInput = ref<HTMLInputElement>();
 
@@ -141,15 +148,20 @@ function addMapping() {
     original: '',
     mapped: ''
   });
+  loggerStore.info(`添加新的列映射，当前共 ${localMappings.value.length} 个映射`);
 }
 
 function removeMapping(index: number) {
+  const mapping = localMappings.value[index];
   localMappings.value.splice(index, 1);
+  loggerStore.info(`删除列映射: ${mapping.original} -> ${mapping.mapped}`);
 }
 
 function clearAllMappings() {
   if (confirm('确定要清空所有映射配置吗？')) {
+    const count = localMappings.value.length;
     localMappings.value = [];
+    loggerStore.warn(`已清空所有 ${count} 个列映射`);
   }
 }
 
@@ -159,17 +171,35 @@ function saveMappings() {
     mapping => mapping.original.trim() && mapping.mapped.trim()
   );
   
+  loggerStore.info(`保存 ${validMappings.length} 个有效列映射`);
+  validMappings.forEach(m => {
+    loggerStore.info(`  映射: ${m.original} -> ${m.mapped}`);
+  });
+  
   emit('save', validMappings);
+  loggerStore.success('列映射配置保存成功');
+}
+
+function skipMappings() {
+  // 跳过配置，传递空数组
+  loggerStore.info('用户选择跳过列映射配置');
+  emit('save', []);
 }
 
 function importMappings() {
+  loggerStore.info('打开导入映射配置对话框');
   fileInput.value?.click();
 }
 
 function handleFileImport(event: Event) {
   const file = (event.target as HTMLInputElement).files?.[0];
-  if (!file) return;
+  if (!file) {
+    loggerStore.warn('未选择导入文件');
+    return;
+  }
 
+  loggerStore.info(`导入映射配置文件: ${file.name}`);
+  
   const reader = new FileReader();
   reader.onload = (e) => {
     try {
@@ -182,10 +212,13 @@ function handleFileImport(event: Event) {
         typeof item.mapped === 'string'
       )) {
         localMappings.value = imported;
+        loggerStore.success(`成功导入 ${imported.length} 个列映射`);
       } else {
+        loggerStore.error('文件格式不正确');
         alert('文件格式不正确，请选择有效的映射配置文件');
       }
     } catch (error) {
+      loggerStore.error(`文件解析失败: ${error instanceof Error ? error.message : String(error)}`);
       alert('文件解析失败，请检查文件格式');
     }
   };
@@ -199,16 +232,21 @@ function handleFileImport(event: Event) {
 }
 
 function exportMappings() {
+  loggerStore.info(`导出 ${localMappings.value.length} 个列映射配置`);
+  
   const dataStr = JSON.stringify(localMappings.value, null, 2);
   const dataBlob = new Blob([dataStr], { type: 'application/json' });
   
   const link = document.createElement('a');
   link.href = URL.createObjectURL(dataBlob);
-  link.download = `column-mappings-${new Date().getTime()}.json`;
+  const fileName = `column-mappings-${new Date().getTime()}.json`;
+  link.download = fileName;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
   
   URL.revokeObjectURL(link.href);
+  
+  loggerStore.success(`列映射配置已导出: ${fileName}`);
 }
 </script>

@@ -89,14 +89,14 @@
 
 <script setup lang="ts">
 import { computed, ref, watch, nextTick } from 'vue';
-import { useLogger } from '@/composables/useLogger';
+import { useLoggerStore } from '@/stores/logger';
 
+const loggerStore = useLoggerStore();
 const {
   logs,
-  addLog,
   clearLogs: clearAllLogs,
   exportLogs: exportAllLogs,
-} = useLogger();
+} = loggerStore;
 
 // 日志级别
 const logLevels = ['info', 'warn', 'error', 'success'] as const;
@@ -107,14 +107,14 @@ const logContainer = ref<HTMLElement>();
 
 // 过滤后的日志
 const filteredLogs = computed(() => {
-  return logs.value.filter(log => visibleLevels.value.includes(log.level));
+  return logs.filter(log => visibleLevels.value.includes(log.level));
 });
 
 // 日志统计
 const logStats = computed(() => {
   const stats: Record<string, number> = {};
   logLevels.forEach(level => {
-    stats[level] = logs.value.filter(log => log.level === level).length;
+    stats[level] = logs.filter(log => log.level === level).length;
   });
   return stats;
 });
@@ -192,10 +192,5 @@ watch(filteredLogs, async () => {
   if (logContainer.value) {
     logContainer.value.scrollTop = logContainer.value.scrollHeight;
   }
-});
-
-// 暴露添加日志的方法给父组件使用
-defineExpose({
-  addLog,
 });
 </script>
