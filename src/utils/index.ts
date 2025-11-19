@@ -38,7 +38,7 @@ export function debounce<T extends (...args: any[]) => any>(
   func: T,
   wait: number
 ): (...args: Parameters<T>) => void {
-  let timeout: number;
+  let timeout: any;
   
   return (...args: Parameters<T>) => {
     clearTimeout(timeout);

@@ -287,14 +287,14 @@ function handleError(error: string) {
   }, 3000);
 }
 
-function resetWorkflow() {
-  currentStep.value = 0;
-  store.clearAllData();
-  convertedFiles.value = [];
-  connectionStatus.value = null;
-  errorMessage.value = '';
-  addLog('info', '工作流程已重置');
-}
+// function resetWorkflow() {
+//   currentStep.value = 0;
+//   store.clearAllData();
+//   convertedFiles.value = [];
+//   connectionStatus.value = null;
+//   errorMessage.value = '';
+//   addLog('info', '工作流程已重置');
+// }
 
 // 监听 Rust 日志事件
 onMounted(async () => {
