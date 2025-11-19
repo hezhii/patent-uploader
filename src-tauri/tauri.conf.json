@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "patentupload",
+  "productName": "专利文件导入工具",
   "version": "1.0.0",
   "identifier": "com.hezhou.patentupload",
   "build": {
