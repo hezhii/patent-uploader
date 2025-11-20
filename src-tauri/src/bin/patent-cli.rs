@@ -81,19 +81,17 @@ async fn main() -> Result<()> {
     // 步骤 3: 转换文件
     println!("[3/4] 正在转换文件...");
     
-    // 解析列映射：优先使用命令行参数，否则使用默认映射
+    // 解析列映射：仅在命令行提供参数时使用
     let mappings = if !args.column_mappings.is_empty() {
-        parse_column_mappings(&args.column_mappings)?
-    } else {
-        get_default_mappings()
-    };
-    
-    if !mappings.is_empty() {
+        let parsed = parse_column_mappings(&args.column_mappings)?;
         println!("  使用列映射:");
-        for mapping in &mappings {
+        for mapping in &parsed {
             println!("    {} -> {}", mapping.original, mapping.mapped);
         }
-    }
+        parsed
+    } else {
+        Vec::new()
+    };
     
     let converted_files = excel::convert_files(&args.input, &args.output, &mappings)
         .await
@@ -276,35 +274,4 @@ fn parse_column_mappings(mappings: &[String]) -> Result<Vec<ColumnMapping>> {
     }
     
     Ok(result)
-}
-
-/// 获取默认的列映射
-/// 根据你的业务需求调整这些映射
-fn get_default_mappings() -> Vec<ColumnMapping> {
-    vec![
-        ColumnMapping {
-            original: "申请号".to_string(),
-            mapped: "申请号".to_string(),
-        },
-        ColumnMapping {
-            original: "申请日".to_string(),
-            mapped: "申请日".to_string(),
-        },
-        ColumnMapping {
-            original: "名称".to_string(),
-            mapped: "名称".to_string(),
-        },
-        ColumnMapping {
-            original: "类型".to_string(),
-            mapped: "类型".to_string(),
-        },
-        ColumnMapping {
-            original: "法律状态".to_string(),
-            mapped: "法律状态".to_string(),
-        },
-        ColumnMapping {
-            original: "申请人".to_string(),
-            mapped: "申请人".to_string(),
-        },
-    ]
 }
