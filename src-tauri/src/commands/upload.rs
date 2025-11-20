@@ -24,8 +24,9 @@ pub async fn upload_file(
     file_path: String,
     server_url: String,
     token: String,
+    only_valid_invention: bool,
 ) -> Result<UploadResult, String> {
-    tracing::info!("开始上传文件: {}", file_path);
+    tracing::info!("开始上传文件: {}, 仅导入有效发明专利: {}", file_path, only_valid_invention);
     
     // 检查文件是否存在
     let path = Path::new(&file_path);
@@ -66,7 +67,11 @@ pub async fn upload_file(
         );
     
     // 构建上传 URL
-    let upload_url = format!("{}/admin/patent/import", server_url.trim_end_matches('/'));
+    let upload_url = format!(
+        "{}/admin/patent/import?onlyValidInvention={}", 
+        server_url.trim_end_matches('/'),
+        only_valid_invention
+    );
     tracing::info!("上传 URL: {}", upload_url);
     
     // 发送请求

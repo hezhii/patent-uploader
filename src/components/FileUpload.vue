@@ -25,6 +25,19 @@
           </div>
         </div>
 
+        <!-- 上传选项 -->
+        <div class="mb-4">
+          <label class="flex items-center space-x-2 text-sm">
+            <input
+              type="checkbox"
+              v-model="onlyValidInvention"
+              :disabled="uploading"
+              class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+            />
+            <span class="text-gray-700">仅导入有效发明专利</span>
+          </label>
+        </div>
+
         <!-- 控制按钮 -->
         <div class="flex space-x-4">
           <button
@@ -149,8 +162,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, watch } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useFileUpload } from '@/composables/useFileUpload';
+import { useAppStore } from '@/stores';
 
 interface Props {
   files: File[];
@@ -164,6 +178,8 @@ interface Emits {
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
+const store = useAppStore();
+
 const {
   uploading,
   uploadProgress,
@@ -176,7 +192,11 @@ const {
   pauseUpload,
   retryUpload,
   clearUploadHistory,
+  setOnlyValidInvention,
 } = useFileUpload();
+
+// 从 store 加载配置
+const onlyValidInvention = ref(store.settings.onlyValidInvention);
 
 // 本地状态
 const uploadPaused = computed(() => isPaused.value);
@@ -191,6 +211,10 @@ const errorCount = computed(() => failedCount.value);
 // 简化的上传控制
 async function handleStartUpload() {
   try {
+    // 保存配置到 store
+    store.updateSettings({ onlyValidInvention: onlyValidInvention.value });
+    // 设置上传参数
+    setOnlyValidInvention(onlyValidInvention.value);
     await startUpload();
   } catch (error) {
     emit('error', error instanceof Error ? error.message : '上传失败');

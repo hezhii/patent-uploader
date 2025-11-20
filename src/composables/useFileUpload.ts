@@ -14,6 +14,7 @@ export function useFileUpload() {
   const uploadProgress = ref<UploadProgress[]>([]);
   const currentUploadIndex = ref(-1);
   const isPaused = ref(false);
+  const onlyValidInvention = ref(false);
 
   const overallProgress = computed(() => {
     if (uploadProgress.value.length === 0) return 0;
@@ -147,6 +148,7 @@ export function useFileUpload() {
         filePath,
         serverUrl,
         token,
+        onlyValidInvention: onlyValidInvention.value,
       });
 
       progressItem.status = 'completed';
@@ -183,6 +185,10 @@ export function useFileUpload() {
     currentUploadIndex.value = -1;
   }
 
+  function setOnlyValidInvention(value: boolean) {
+    onlyValidInvention.value = value;
+  }
+
   return {
     uploading: readonly(uploading),
     uploadProgress: readonly(uploadProgress),
@@ -196,5 +202,6 @@ export function useFileUpload() {
     pauseUpload,
     retryUpload,
     clearUploadHistory,
+    setOnlyValidInvention,
   };
 }

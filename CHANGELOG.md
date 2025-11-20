@@ -1,5 +1,68 @@
 # 更新日志
 
+## 2025-11-20 (第四次更新)
+
+### ✨ 新增功能
+
+#### 1. 支持仅导入有效发明专利选项
+
+- **前端改进**
+  - 在 FileUpload 组件添加 checkbox 控制是否仅导入有效发明专利
+  - 在 store 中添加 `onlyValidInvention` 配置项（默认 false）
+  - 配置自动保存到 localStorage
+
+- **后端改进**
+  - 修改 `upload_file` 命令接收 `only_valid_invention` 参数
+  - 在上传 URL 中添加查询参数：`?onlyValidInvention=true/false`
+  - 支持与服务器接口 `/admin/patent/import` 的查询参数对接
+
+- **修改的文件**
+  - `src/stores/index.ts` - 添加 onlyValidInvention 配置
+  - `src/components/FileUpload.vue` - 添加 checkbox UI
+  - `src/composables/useFileUpload.ts` - 传递参数到 Rust
+  - `src-tauri/src/commands/upload.rs` - 支持查询参数
+
+### 🐛 Bug 修复
+
+#### 2. 修复 Ubuntu 24 输入框卡死问题
+
+**问题描述**: 在 Ubuntu 24 中，build 后的应用在服务器配置输入框中输入时整个应用卡死无响应，开发模式运行正常。
+
+**根本原因**: Tauri/WebView 与 Linux 输入法框架（IBus/Fcitx）和 WebKit 渲染引擎存在兼容性问题。
+
+**解决方案**:
+
+1. **创建启动脚本** (`patentupload.sh`)
+   - 设置 `GTK_IM_MODULE=xim` 使用简单输入法模块
+   - 设置 `QT_IM_MODULE=xim` 避免复杂输入法交互
+   - 设置 `XMODIFIERS=@im=none` 禁用 X 输入法扩展
+   - 设置 `WEBKIT_DISABLE_COMPOSITING_MODE=1` 禁用 WebKit 合成模式
+
+2. **Tauri 配置优化**
+   - 在 `tauri.conf.json` 中添加 Linux 特定的 webview 选项
+   - 启用 `withGlobalTauri` 提高稳定性
+
+3. **详细文档**
+   - 创建 `doc/Ubuntu输入框卡死问题解决方案.md`
+   - 提供多种解决方案和故障排除指南
+   - 更新 README 添加使用说明
+
+- **新增文件**
+  - `patentupload.sh` - Linux 启动脚本
+  - `doc/Ubuntu输入框卡死问题解决方案.md` - 详细解决方案文档
+
+- **修改的文件**
+  - `src-tauri/tauri.conf.json` - 优化 Linux WebView 配置
+  - `README.md` - 添加 Linux 使用说明
+
+### 📝 文档更新
+
+- 完善 README，添加功能特性说明
+- 添加 Linux 平台特别说明
+- 创建专门的故障排除文档
+
+---
+
 ## 2025-11-18 (第三次更新)
 
 ### 🔧 修复文件上传问题
