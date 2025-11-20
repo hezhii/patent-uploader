@@ -1,5 +1,68 @@
 # 更新日志
 
+## 2025-11-20 (第五次更新)
+
+### ✨ 新增功能
+
+#### 1. 命令行工具（CLI）支持
+
+新增独立的命令行工具，无需图形界面即可完成专利文件的扫描、转换和上传。
+
+- **功能实现**
+  - 创建独立的 binary target `patent-cli`
+  - 使用 `clap` 实现命令行参数解析
+  - 支持所有 GUI 功能：登录、扫描、转换、上传
+  - 完整的进度显示和错误处理
+  - 支持所有必需参数和可选参数
+
+- **命令行参数**
+  - `-s, --server` - 服务器地址
+  - `-u, --username` - 用户账号
+  - `-p, --password` - 用户密码
+  - `-i, --input` - 输入目录路径
+  - `-o, --output` - 输出目录路径
+  - `-v, --only-valid-invention` - 是否仅上传有效发明专利
+
+- **使用示例**
+  ```bash
+  ./patent-cli \
+    --server http://localhost:3000 \
+    --username admin \
+    --password admin123 \
+    --input /path/to/input \
+    --output /path/to/output \
+    --only-valid-invention
+  ```
+
+- **应用场景**
+  - 服务器环境批量处理
+  - CI/CD 自动化流程
+  - 无图形界面环境
+  - 脚本自动化任务
+
+- **新增/修改的文件**
+  - `src-tauri/src/cli.rs` - CLI 参数定义
+  - `src-tauri/src/bin/patent-cli.rs` - CLI 主程序入口
+  - `src-tauri/src/lib.rs` - 导出公共模块
+  - `src-tauri/Cargo.toml` - 添加 clap 依赖和 binary target
+  - `doc/CLI工具使用文档.md` - 详细使用文档
+  - `example-cli.sh` - 使用示例脚本
+  - `README.md` - 更新文档说明
+
+### 📝 文档更新
+
+- 创建 `doc/CLI工具使用文档.md` 包含：
+  - 构建说明
+  - 使用方法和参数说明
+  - 示例和输出展示
+  - CI/CD 集成指南
+  - 错误处理和日志配置
+
+- 更新 `README.md` 添加：
+  - CLI 工具功能介绍
+  - 构建和使用说明
+  - 文档链接
+
 ## 2025-11-20 (第四次更新)
 
 ### ✨ 新增功能

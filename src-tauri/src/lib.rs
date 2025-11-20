@@ -1,6 +1,8 @@
-mod commands;
-mod excel;
+pub mod commands;
+pub mod excel;
 mod utils;
+
+pub mod cli;
 
 use commands::*;
 use utils::TauriLayer;
