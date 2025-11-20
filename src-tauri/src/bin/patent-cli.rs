@@ -59,6 +59,9 @@ async fn main() -> Result<()> {
     println!("输入目录: {}", args.input);
     println!("输出目录: {}", args.output);
     println!("仅上传有效发明专利: {}", args.only_valid_invention);
+    if !args.column_mappings.is_empty() {
+        println!("列名映射: {} 组", args.column_mappings.len());
+    }
     println!();
 
     // 步骤 1: 登录获取 token
@@ -78,8 +81,19 @@ async fn main() -> Result<()> {
     // 步骤 3: 转换文件
     println!("[3/4] 正在转换文件...");
     
-    // 使用默认的列映射（根据你的业务逻辑设置）
-    let mappings = get_default_mappings();
+    // 解析列映射：优先使用命令行参数，否则使用默认映射
+    let mappings = if !args.column_mappings.is_empty() {
+        parse_column_mappings(&args.column_mappings)?
+    } else {
+        get_default_mappings()
+    };
+    
+    if !mappings.is_empty() {
+        println!("  使用列映射:");
+        for mapping in &mappings {
+            println!("    {} -> {}", mapping.original, mapping.mapped);
+        }
+    }
     
     let converted_files = excel::convert_files(&args.input, &args.output, &mappings)
         .await
@@ -227,6 +241,39 @@ async fn upload_file(
     
     // 解析响应
     let result: UploadResult = response.json().await.context("解析响应失败")?;
+    
+    Ok(result)
+}
+
+/// 解析命令行传入的列映射参数
+/// 格式: "原列名:映射列名"
+fn parse_column_mappings(mappings: &[String]) -> Result<Vec<ColumnMapping>> {
+    let mut result = Vec::new();
+    
+    for mapping_str in mappings {
+        let parts: Vec<&str> = mapping_str.split(':').collect();
+        if parts.len() != 2 {
+            anyhow::bail!(
+                "列映射格式错误: '{}'。正确格式: '原列名:映射列名'",
+                mapping_str
+            );
+        }
+        
+        let original = parts[0].trim();
+        let mapped = parts[1].trim();
+        
+        if original.is_empty() || mapped.is_empty() {
+            anyhow::bail!(
+                "列名不能为空: '{}'",
+                mapping_str
+            );
+        }
+        
+        result.push(ColumnMapping {
+            original: original.to_string(),
+            mapped: mapped.to_string(),
+        });
+    }
     
     Ok(result)
 }

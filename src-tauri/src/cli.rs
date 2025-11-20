@@ -27,6 +27,11 @@ pub struct CliArgs {
     /// 是否仅上传有效发明专利
     #[arg(short = 'v', long, default_value_t = false)]
     pub only_valid_invention: bool,
+
+    /// 列名映射（格式: "原列名:映射列名"，可多次指定）
+    /// 例如: --column-mapping "申请号:申请号" --column-mapping "名称:专利名称"
+    #[arg(short = 'm', long = "column-mapping", value_name = "MAPPING")]
+    pub column_mappings: Vec<String>,
 }
 
 impl CliArgs {

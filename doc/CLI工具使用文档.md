@@ -42,6 +42,7 @@ patent-cli [OPTIONS]
 #### 可选参数
 
 - `-v, --only-valid-invention` - 是否仅上传有效发明专利（默认: false）
+- `-m, --column-mapping <MAPPING>` - 列名映射（格式: "原列名:映射列名"，可多次指定）
 
 ### 使用示例
 
@@ -68,6 +69,23 @@ patent-cli [OPTIONS]
   --only-valid-invention
 ```
 
+#### 使用自定义列映射
+
+```bash
+./patent-cli \
+  --server http://localhost:3000 \
+  --username admin \
+  --password admin123 \
+  --input /path/to/input \
+  --output /path/to/output \
+  --column-mapping "申请号:申请号" \
+  --column-mapping "申请日:申请日" \
+  --column-mapping "名称:专利名称" \
+  --column-mapping "类型:专利类型" \
+  --column-mapping "法律状态:法律状态" \
+  --column-mapping "申请人:申请人"
+```
+
 #### 使用短参数
 
 ```bash
@@ -77,7 +95,9 @@ patent-cli [OPTIONS]
   -p admin123 \
   -i /path/to/input \
   -o /path/to/output \
-  -v
+  -v \
+  -m "申请号:申请号" \
+  -m "名称:专利名称"
 ```
 
 ## 执行流程
@@ -98,6 +118,7 @@ CLI 工具会按以下步骤执行：
 输入目录: /path/to/input
 输出目录: /path/to/output
 仅上传有效发明专利: false
+列名映射: 6 组
 
 [1/4] 正在登录...
 ✓ 登录成功
@@ -106,6 +127,13 @@ CLI 工具会按以下步骤执行：
 ✓ 发现 5 个 Excel 文件
 
 [3/4] 正在转换文件...
+  使用列映射:
+    申请号 -> 申请号
+    申请日 -> 申请日
+    名称 -> 专利名称
+    类型 -> 专利类型
+    法律状态 -> 法律状态
+    申请人 -> 申请人
 ✓ 成功转换 5 个文件
 
 [4/4] 正在上传文件...
@@ -143,7 +171,32 @@ RUST_LOG=patentupload=debug ./patent-cli [OPTIONS]
 
 ## 配置列映射
 
-默认的列映射在 `src/bin/patent-cli.rs` 的 `get_default_mappings()` 函数中定义。如需修改，请编辑该函数：
+### 命令行参数方式（推荐）
+
+使用 `--column-mapping` 或 `-m` 参数指定列映射，可以多次使用该参数来指定多组映射：
+
+```bash
+./patent-cli \
+  --server http://localhost:3000 \
+  --username admin \
+  --password admin123 \
+  --input /path/to/input \
+  --output /path/to/output \
+  --column-mapping "申请号:申请号" \
+  --column-mapping "申请日:申请日" \
+  --column-mapping "名称:专利名称"
+```
+
+**映射格式**：`"原列名:映射列名"`
+- 冒号前是 Excel 文件中的原始列名
+- 冒号后是要映射到的目标列名
+- 每个映射使用一个 `--column-mapping` 参数
+
+### 默认映射方式
+
+如果不指定 `--column-mapping` 参数，工具会使用默认的列映射。默认映射在 `src-tauri/src/bin/patent-cli.rs` 的 `get_default_mappings()` 函数中定义。
+
+如需修改默认映射，请编辑该函数：
 
 ```rust
 fn get_default_mappings() -> Vec<ColumnMapping> {
