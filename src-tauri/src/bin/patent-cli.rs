@@ -78,37 +78,43 @@ async fn main() -> Result<()> {
     println!("✓ 发现 {} 个 Excel 文件", scan_result.file_count);
     println!();
 
-    // 步骤 3: 转换文件
-    println!("[3/4] 正在转换文件...");
-    
-    // 解析列映射：仅在命令行提供参数时使用
-    let mappings = if !args.column_mappings.is_empty() {
+    // 步骤 3: 转换文件（如果需要）
+    let files_to_upload = if !args.column_mappings.is_empty() {
+        println!("[3/4] 正在转换文件...");
+        
+        // 解析列映射：仅在命令行提供参数时使用
         let parsed = parse_column_mappings(&args.column_mappings)?;
         println!("  使用列映射:");
         for mapping in &parsed {
             println!("    {} -> {}", mapping.original, mapping.mapped);
         }
-        parsed
+        
+        let converted_files = excel::convert_files(&args.input, &args.output, &parsed)
+            .await
+            .map_err(|e| anyhow::anyhow!(e))?;
+        
+        println!("✓ 成功转换 {} 个文件", converted_files.len());
+        println!();
+        
+        converted_files
     } else {
-        Vec::new()
+        println!("[3/4] 跳过文件转换（未配置列映射）...");
+        println!("✓ 将直接上传原始文件");
+        println!();
+        
+        // 直接使用扫描到的原文件
+        scan_result.files.clone()
     };
-    
-    let converted_files = excel::convert_files(&args.input, &args.output, &mappings)
-        .await
-        .map_err(|e| anyhow::anyhow!(e))?;
-    
-    println!("✓ 成功转换 {} 个文件", converted_files.len());
-    println!();
 
     // 步骤 4: 上传文件
     println!("[4/4] 正在上传文件...");
     let mut success_count = 0;
     let mut fail_count = 0;
     
-    for (index, file_path) in converted_files.iter().enumerate() {
+    for (index, file_path) in files_to_upload.iter().enumerate() {
         print!("  [{}/{}] 正在上传 {} ... ", 
             index + 1, 
-            converted_files.len(), 
+            files_to_upload.len(), 
             Path::new(file_path).file_name().unwrap().to_string_lossy()
         );
         

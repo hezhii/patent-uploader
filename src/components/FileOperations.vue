@@ -27,7 +27,7 @@
           </div>
         </div>
 
-        <div>
+        <div v-if="needsConversion">
           <label class="block text-sm font-medium text-gray-700 mb-1">
             目标文件夹
           </label>
@@ -47,6 +47,10 @@
               浏览
             </button>
           </div>
+        </div>
+        
+        <div v-else class="p-3 bg-blue-50 border border-blue-200 rounded-md text-sm text-blue-700">
+          <p>当前未配置列映射，将直接上传原始Excel文件，无需指定目标文件夹</p>
         </div>
       </div>
     </div>
@@ -98,14 +102,14 @@
           class="btn-secondary flex-1"
           :class="{ 'opacity-50 cursor-not-allowed': !canConvert || converting }"
         >
-          {{ converting ? '转换中...' : '开始转换' }}
+          {{ converting ? '处理中...' : (needsConversion ? '开始转换' : '准备上传') }}
         </button>
       </div>
     </div>
 
     <!-- 转换进度 -->
     <div v-if="converting" class="card">
-      <h3 class="text-lg font-semibold mb-4">转换进度</h3>
+      <h3 class="text-lg font-semibold mb-4">{{ needsConversion ? '转换进度' : '处理进度' }}</h3>
       
       <div class="space-y-3">
         <div class="w-full bg-gray-200 rounded-full h-2">
@@ -115,7 +119,7 @@
           ></div>
         </div>
         <div class="text-sm text-gray-600 text-center">
-          正在转换Excel文件...
+          {{ needsConversion ? '正在转换Excel文件...' : '正在准备Excel文件...' }}
         </div>
       </div>
     </div>
@@ -128,7 +132,7 @@
         <div class="flex items-center">
           <span class="text-green-500 text-xl mr-2">✅</span>
           <span class="text-green-700">
-            成功转换 {{ convertedFiles.length }} 个文件，可以开始上传了
+            {{ needsConversion ? `成功转换 ${convertedFiles.length} 个文件` : `已准备 ${convertedFiles.length} 个文件` }}，可以开始上传了
           </span>
         </div>
       </div>
@@ -137,6 +141,7 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
 import { useFileOperations } from '@/composables/useFileOperations';
 import { formatFileSize } from '@/utils';
 import type { ColumnMapping } from '@/types';
@@ -166,6 +171,9 @@ const {
   scanFiles,
   startConversion,
 } = useFileOperations();
+
+// 是否需要转换（有列映射配置）
+const needsConversion = computed(() => props.columnMappings.length > 0);
 
 async function handleScanFiles() {
   try {

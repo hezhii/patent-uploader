@@ -14,9 +14,15 @@ export function useFileOperations() {
   const scanning = ref(false);
   const converting = ref(false);
   
-  const canConvert = computed(() => 
-    scanResult.value && scanResult.value.file_count > 0 && targetPath.value
-  );
+  const canConvert = computed(() => {
+    // 如果没有扫描结果或没有文件，不能转换
+    if (!scanResult.value || scanResult.value.file_count === 0) {
+      return false;
+    }
+    // 如果有扫描结果，就可以进行处理
+    // 即使没有目标路径，如果没有列映射配置，也可以直接处理
+    return true;
+  });
   
   const canUpload = computed(() => 
     convertedFiles.value.length > 0
@@ -91,7 +97,52 @@ export function useFileOperations() {
   
   async function startConversion(mappings: ColumnMapping[]) {
     if (!canConvert.value) {
-      loggerStore.warn('请先扫描文件并选择目标文件夹');
+      loggerStore.warn('请先扫描文件');
+      return;
+    }
+    
+    // 如果没有列映射，直接返回扫描到的原始文件
+    if (mappings.length === 0) {
+      loggerStore.info('未配置列映射，将直接上传原始文件');
+      converting.value = true;
+      
+      try {
+        if (!scanResult.value) {
+          throw new Error('未找到扫描结果');
+        }
+        
+        // 将文件路径转换为File对象
+        const files = await Promise.all(
+          scanResult.value.files.map(async (filePath) => {
+            const fileName = filePath.split('/').pop() || filePath.split('\\').pop() || 'unknown.xlsx';
+            
+            // 创建一个虚拟的 File 对象，实际文件读取在上传时进行
+            const file = new File([], fileName, { 
+              type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+            });
+            
+            // 添加文件路径属性，用于后续读取
+            (file as any).filePath = filePath;
+            
+            return file;
+          })
+        );
+        
+        convertedFiles.value = files;
+        loggerStore.success(`准备完成，共 ${files.length} 个文件待上传`);
+        return files;
+      } catch (error) {
+        const errorMsg = `准备文件失败: ${error instanceof Error ? error.message : String(error)}`;
+        loggerStore.error(errorMsg);
+        throw new Error(errorMsg);
+      } finally {
+        converting.value = false;
+      }
+    }
+    
+    // 有列映射时，需要目标路径
+    if (!targetPath.value) {
+      loggerStore.warn('请先选择目标文件夹');
       return;
     }
     

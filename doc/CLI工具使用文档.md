@@ -37,16 +37,20 @@ patent-cli [OPTIONS]
 - `-u, --username <USERNAME>` - 用户账号
 - `-p, --password <PASSWORD>` - 用户密码
 - `-i, --input <INPUT>` - 输入目录路径（包含源 Excel 文件）
-- `-o, --output <OUTPUT>` - 输出目录路径（存储转换后的文件）
+- `-o, --output <OUTPUT>` - 输出目录路径（存储转换后的文件，仅在配置列映射时需要）
 
 #### 可选参数
 
 - `-v, --only-valid-invention` - 是否仅上传有效发明专利（默认: false）
 - `-m, --column-mapping <MAPPING>` - 列名映射（格式: "原列名:映射列名"，可多次指定）
+  - **如果不指定列映射，将直接上传原始 Excel 文件，无需进行列转换**
+  - **注意：当指定列映射时，必须同时指定 `-o` 输出目录**
 
 ### 使用示例
 
-#### 基本使用
+#### 1. 直接上传（无列映射，不进行转换）
+
+**新功能：** 如果不需要对 Excel 列进行转换，可以不指定 `--column-mapping` 参数，工具将直接上传原始文件。
 
 ```bash
 ./patent-cli \
@@ -57,7 +61,9 @@ patent-cli [OPTIONS]
   --output /path/to/output
 ```
 
-#### 仅上传有效发明专利
+**注意：** 当不配置列映射时，`--output` 参数将被忽略，因为不需要生成转换后的文件。
+
+#### 2. 仅上传有效发明专利（直接上传模式）
 
 ```bash
 ./patent-cli \
@@ -69,7 +75,9 @@ patent-cli [OPTIONS]
   --only-valid-invention
 ```
 
-#### 使用自定义列映射
+#### 3. 使用自定义列映射（转换模式）
+
+**指定列映射时，工具会先转换 Excel 文件，然后上传转换后的文件。**
 
 ```bash
 ./patent-cli \
@@ -86,7 +94,7 @@ patent-cli [OPTIONS]
   --column-mapping "申请人:申请人"
 ```
 
-#### 使用短参数
+#### 4. 使用短参数
 
 ```bash
 ./patent-cli \

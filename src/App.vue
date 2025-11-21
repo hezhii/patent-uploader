@@ -64,14 +64,25 @@
           <!-- 步骤2: 列映射配置 -->
           <div v-show="currentStep >= 1" class="card">
             <div class="flex justify-between items-center mb-4 cursor-pointer" @click="toggleStep(1)">
-              <h3 class="text-lg font-semibold">2. 列名映射配置</h3>
+              <h3 class="text-lg font-semibold">2. 列名映射配置（可选）</h3>
               <span class="text-xl">{{ expandedSteps[1] ? '▼' : '▶' }}</span>
             </div>
             <div v-show="expandedSteps[1]">
+              <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md text-sm text-blue-700">
+                <p>如果不需要对Excel列进行转换，可以跳过此步骤，直接上传原始文件</p>
+              </div>
               <ColumnMapping
                 v-model="store.columnMappings"
                 @save="handleMappingsUpdated"
               />
+              <div class="mt-4">
+                <button
+                  @click="handleSkipMapping"
+                  class="btn-secondary w-full"
+                >
+                  跳过列映射，直接处理文件
+                </button>
+              </div>
             </div>
           </div>
 
@@ -251,6 +262,18 @@ function handleMappingsUpdated() {
   // 保存到 store 并持久化
   store.saveColumnMappings(store.columnMappings);
   addLog('info', `列映射配置已更新并保存，共 ${store.columnMappings.length} 个映射`);
+  currentStep.value = Math.max(currentStep.value, 2);
+  
+  // 收起当前步骤，展开下一步
+  expandedSteps.value[1] = false;
+  expandedSteps.value[2] = true;
+}
+
+function handleSkipMapping() {
+  // 清空列映射配置
+  store.columnMappings = [];
+  store.saveColumnMappings([]);
+  addLog('info', '已跳过列映射配置，将直接上传原始文件');
   currentStep.value = Math.max(currentStep.value, 2);
   
   // 收起当前步骤，展开下一步
