@@ -37,9 +37,11 @@ xlsxwriter = "0.6"
 walkdir = "2.4"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tracing-appender = "0.2"
 chrono = { version = "0.4", features = ["serde"] }
 uuid = { version = "1.0", features = ["v4"] }
 anyhow = "1.0"
-reqwest = { version = "0.12", features = ["multipart", "json"] }
+reqwest = { version = "0.12", features = ["multipart", "json", "stream"] }
 clap = { version = "4.5", features = ["derive"] }
+indicatif = "0.17"
 
