@@ -27,15 +27,18 @@
 
         <!-- 上传选项 -->
         <div class="mb-4">
-          <label class="flex items-center space-x-2 text-sm">
-            <input
-              type="checkbox"
-              v-model="onlyValidInvention"
-              :disabled="uploading"
-              class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-            />
-            <span class="text-gray-700">仅导入有效发明专利</span>
+          <label class="block text-sm font-medium text-gray-700 mb-1">
+            导入模式
           </label>
+          <select
+            v-model="importMode"
+            :disabled="uploading"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="all">所有专利</option>
+            <option value="inventionOnly">仅发明专利</option>
+            <option value="validInventionOnly">仅有效发明专利</option>
+          </select>
         </div>
 
         <!-- 控制按钮 -->
@@ -192,11 +195,11 @@ const {
   pauseUpload,
   retryUpload,
   clearUploadHistory,
-  setOnlyValidInvention,
+  setImportMode,
 } = useFileUpload();
 
 // 从 store 加载配置
-const onlyValidInvention = ref(store.settings.onlyValidInvention);
+const importMode = ref(store.settings.importMode);
 
 // 本地状态
 const uploadPaused = computed(() => isPaused.value);
@@ -212,9 +215,9 @@ const errorCount = computed(() => failedCount.value);
 async function handleStartUpload() {
   try {
     // 保存配置到 store
-    store.updateSettings({ onlyValidInvention: onlyValidInvention.value });
+    store.updateSettings({ importMode: importMode.value });
     // 设置上传参数
-    setOnlyValidInvention(onlyValidInvention.value);
+    setImportMode(importMode.value);
     await startUpload();
   } catch (error) {
     emit('error', error instanceof Error ? error.message : '上传失败');

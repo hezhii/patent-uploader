@@ -14,7 +14,7 @@ export function useFileUpload() {
   const uploadProgress = ref<UploadProgress[]>([]);
   const currentUploadIndex = ref(-1);
   const isPaused = ref(false);
-  const onlyValidInvention = ref(false);
+  const importMode = ref<'all' | 'inventionOnly' | 'validInventionOnly'>('all');
 
   const overallProgress = computed(() => {
     if (uploadProgress.value.length === 0) return 0;
@@ -148,7 +148,7 @@ export function useFileUpload() {
         filePath,
         serverUrl,
         token,
-        onlyValidInvention: onlyValidInvention.value,
+        importMode: importMode.value,
       });
 
       progressItem.status = 'completed';
@@ -185,8 +185,8 @@ export function useFileUpload() {
     currentUploadIndex.value = -1;
   }
 
-  function setOnlyValidInvention(value: boolean) {
-    onlyValidInvention.value = value;
+  function setImportMode(mode: 'all' | 'inventionOnly' | 'validInventionOnly') {
+    importMode.value = mode;
   }
 
   return {
@@ -202,6 +202,6 @@ export function useFileUpload() {
     pauseUpload,
     retryUpload,
     clearUploadHistory,
-    setOnlyValidInvention,
+    setImportMode,
   };
 }

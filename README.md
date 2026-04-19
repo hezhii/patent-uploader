@@ -8,7 +8,7 @@
 - 📊 Excel 文件预览和列名映射
 - 🔐 服务器连接配置和身份验证
 - 📤 多文件并发上传，支持进度跟踪
-- 🎯 支持仅导入有效发明专利选项
+- 🎯 支持多种导入模式（全部/仅发明专利/仅有效发明专利）
 - 📝 详细的操作日志记录
 - 💾 配置自动保存
 - 🖥️ **命令行工具支持** - 无需图形界面即可执行所有功能
@@ -70,7 +70,7 @@ cargo build --release --bin patent-cli
   --password admin123 \
   --input /path/to/input \
   --output /path/to/output \
-  --only-valid-invention
+  --import-mode all                    # 导入模式: all / invention-only / valid-invention-only
 ```
 
 详细的 CLI 使用文档请参考：[CLI工具使用文档](./doc/CLI工具使用文档.md)
@@ -98,7 +98,7 @@ chmod +x patentupload.sh
 1. **服务器配置**: 配置服务器地址、用户名和密码
 2. **扫描文件**: 选择包含专利文件的文件夹
 3. **列名映射**: 配置 Excel 列名与服务器字段的映射关系
-4. **上传选项**: 选择是否仅导入有效发明专利
+4. **上传选项**: 选择导入模式（全部/仅发明专利/仅有效发明专利）
 5. **开始上传**: 批量上传文件并查看进度
 
 ## 开发文档

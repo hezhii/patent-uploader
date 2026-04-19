@@ -18,7 +18,7 @@ export const useAppStore = defineStore('app', () => {
     theme: 'light' as 'light' | 'dark',
     autoSave: true,
     logLevel: 'info' as 'debug' | 'info' | 'warn' | 'error',
-    onlyValidInvention: false // 是否仅导入有效发明专利
+    importMode: 'all' as 'all' | 'inventionOnly' | 'validInventionOnly'
   });
 
   // 保存服务器配置

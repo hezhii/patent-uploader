@@ -1,5 +1,5 @@
 use anyhow::{Context, Result};
-use patentupload_lib::cli::CliArgs;
+use patentupload_lib::cli::{CliArgs, ImportMode};
 use patentupload_lib::excel;
 use patentupload_lib::commands::types::ColumnMapping;
 use reqwest;
@@ -59,7 +59,7 @@ async fn main() -> Result<()> {
     println!("用户名: {}", args.username);
     println!("输入目录: {}", args.input);
     println!("输出目录: {}", args.output);
-    println!("仅上传有效发明专利: {}", args.only_valid_invention);
+    println!("导入模式: {}", args.import_mode);
     if !args.column_mappings.is_empty() {
         println!("列名映射: {} 组", args.column_mappings.len());
     }
@@ -139,7 +139,7 @@ async fn main() -> Result<()> {
             file_path,
             &args.server,
             &token,
-            args.only_valid_invention
+            args.import_mode
         );
         
         match timeout(Duration::from_secs(600), upload_future).await {
@@ -251,7 +251,7 @@ async fn upload_file(
     file_path: &str,
     server_url: &str,
     token: &str,
-    only_valid_invention: bool,
+    import_mode: ImportMode,
 ) -> Result<UploadResult> {
     let path = Path::new(file_path);
     if !path.exists() {
@@ -281,9 +281,9 @@ async fn upload_file(
     
     // 构建上传 URL
     let upload_url = format!(
-        "{}/admin/patent/import?onlyValidInvention={}", 
+        "{}/admin/patent/import?importMode={}",
         server_url.trim_end_matches('/'),
-        only_valid_invention
+        import_mode
     );
     
     // 发送请求

@@ -41,7 +41,10 @@ patent-cli [OPTIONS]
 
 #### 可选参数
 
-- `-v, --only-valid-invention` - 是否仅上传有效发明专利（默认: false）
+- `-v, --import-mode <MODE>` - 导入模式（默认: all）
+  - `all` - 上传所有专利
+  - `invention-only` - 仅上传发明专利
+  - `valid-invention-only` - 仅上传有效发明专利
 - `-m, --column-mapping <MAPPING>` - 列名映射（格式: "原列名:映射列名"，可多次指定）
   - **如果不指定列映射，将直接上传原始 Excel 文件，无需进行列转换**
   - **注意：当指定列映射时，必须同时指定 `-o` 输出目录**
@@ -69,10 +72,10 @@ patent-cli [OPTIONS]
 ./patent-cli \
   --server http://localhost:3000 \
   --username admin \
-  --password admin123 \
-  --input /path/to/input \
-  --output /path/to/output \
-  --only-valid-invention
+  --password 123456 \
+  --input ~/Desktop/1 \
+  --output ~/Desktop \
+  --import-mode valid-invention-only
 ```
 
 #### 3. 使用自定义列映射（转换模式）
@@ -125,7 +128,7 @@ CLI 工具会按以下步骤执行：
 用户名: admin
 输入目录: /path/to/input
 输出目录: /path/to/output
-仅上传有效发明专利: false
+导入模式: all
 列名映射: 6 组
 
 [1/4] 正在登录...
@@ -246,7 +249,7 @@ cargo build --release --bin patent-cli
   --password "$PASSWORD" \
   --input "$INPUT_DIR" \
   --output "$OUTPUT_DIR" \
-  --only-valid-invention
+  --import-mode valid-invention-only
 
 echo "专利文件上传完成"
 ```
