@@ -34,7 +34,7 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tokio = { version = "1.0", features = ["full"] }
 calamine = { version = "0.24", features = ["dates"] }
-xlsxwriter = "0.6"
+rust_xlsxwriter = "0.95"
 walkdir = "2.4"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
@@ -45,4 +45,3 @@ anyhow = "1.0"
 reqwest = { version = "0.12", features = ["multipart", "json", "stream"] }
 clap = { version = "4.5", features = ["derive"] }
 indicatif = "0.17"
-

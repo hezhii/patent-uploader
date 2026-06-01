@@ -1,4 +1,5 @@
 use calamine::{open_workbook, Data, Reader, Xlsx};
+use rust_xlsxwriter::Workbook;
 use std::collections::HashMap;
 use std::path::Path;
 use walkdir::WalkDir;
@@ -137,12 +138,8 @@ fn process_excel_file(
             e
         })?;
     
-    // 使用 xlsxwriter 创建新文件
-    let new_workbook = xlsxwriter::Workbook::new(target_path.to_str().unwrap())
-        .map_err(|e| {
-            tracing::error!("创建新 Excel 文件失败: {}", e);
-            e
-        })?;
+    // 使用纯 Rust 写入库创建新文件，避免 Windows 开发环境依赖 libclang。
+    let mut new_workbook = Workbook::new();
     
     let sheet_names = workbook.sheet_names().to_owned();
     tracing::debug!("工作表数量: {}", sheet_names.len());
@@ -152,7 +149,8 @@ fn process_excel_file(
         tracing::debug!("处理工作表: {}", sheet_name);
         
         if let Ok(range) = workbook.worksheet_range(&sheet_name) {
-            let mut worksheet = new_workbook.add_worksheet(Some(&sheet_name))?;
+            let worksheet = new_workbook.add_worksheet();
+            worksheet.set_name(&sheet_name)?;
             
             let mut row_index = 0u32;
             let row_count = range.rows().count();
@@ -170,7 +168,7 @@ fn process_excel_file(
                             mapped_count += 1;
                             tracing::debug!("映射列名: {} -> {}", header_text, mapped_header);
                         }
-                        worksheet.write_string(row_index, col_index as u16, mapped_header, None)?;
+                        worksheet.write_string(row_index, col_index as u16, mapped_header)?;
                     }
                     if mapped_count > 0 {
                         tracing::info!("工作表 {} 应用了 {} 个列映射", sheet_name, mapped_count);
@@ -179,7 +177,7 @@ fn process_excel_file(
                     // 处理数据行
                     for (col_index, cell) in row.iter().enumerate() {
                         let cell_text = cell_to_string(cell);
-                        worksheet.write_string(row_index, col_index as u16, &cell_text, None)?;
+                        worksheet.write_string(row_index, col_index as u16, &cell_text)?;
                     }
                 }
                 
@@ -188,9 +186,9 @@ fn process_excel_file(
         }
     }
     
-    new_workbook.close()
+    new_workbook.save(target_path)
         .map_err(|e| {
-            tracing::error!("关闭 Excel 文件失败: {}", e);
+            tracing::error!("保存 Excel 文件失败: {}", e);
             e
         })?;
     

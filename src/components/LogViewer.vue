@@ -89,11 +89,12 @@
 
 <script setup lang="ts">
 import { computed, ref, watch, nextTick } from 'vue';
+import { storeToRefs } from 'pinia';
 import { useLoggerStore } from '@/stores/logger';
 
 const loggerStore = useLoggerStore();
+const { logs } = storeToRefs(loggerStore);
 const {
-  logs,
   clearLogs: clearAllLogs,
   exportLogs: exportAllLogs,
 } = loggerStore;
@@ -107,14 +108,14 @@ const logContainer = ref<HTMLElement>();
 
 // 过滤后的日志
 const filteredLogs = computed(() => {
-  return logs.filter(log => visibleLevels.value.includes(log.level));
+  return logs.value.filter(log => visibleLevels.value.includes(log.level));
 });
 
 // 日志统计
 const logStats = computed(() => {
   const stats: Record<string, number> = {};
   logLevels.forEach(level => {
-    stats[level] = logs.filter(log => log.level === level).length;
+    stats[level] = logs.value.filter(log => log.level === level).length;
   });
   return stats;
 });
