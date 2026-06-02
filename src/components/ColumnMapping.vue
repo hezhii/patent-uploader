@@ -130,17 +130,35 @@ const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
 const loggerStore = useLoggerStore();
-const localMappings = ref<ColumnMapping[]>([...props.modelValue]);
 const fileInput = ref<HTMLInputElement>();
+
+function cloneMappings(mappings: ColumnMapping[]) {
+  return mappings.map(mapping => ({
+    original: mapping.original,
+    mapped: mapping.mapped
+  }));
+}
+
+function isSameMappings(a: ColumnMapping[], b: ColumnMapping[]) {
+  return a.length === b.length &&
+         a.every((mapping, index) =>
+           mapping.original === b[index]?.original &&
+           mapping.mapped === b[index]?.mapped
+         );
+}
+
+const localMappings = ref<ColumnMapping[]>(cloneMappings(props.modelValue));
 
 // 监听外部数据变化
 watch(() => props.modelValue, (newValue) => {
-  localMappings.value = [...newValue];
+  if (isSameMappings(newValue, localMappings.value)) return;
+  localMappings.value = cloneMappings(newValue);
 }, { deep: true });
 
 // 监听本地数据变化，同步到外部
 watch(localMappings, (newValue) => {
-  emit('update:modelValue', [...newValue]);
+  if (isSameMappings(newValue, props.modelValue)) return;
+  emit('update:modelValue', cloneMappings(newValue));
 }, { deep: true });
 
 function addMapping() {
@@ -176,7 +194,7 @@ function saveMappings() {
     loggerStore.info(`  映射: ${m.original} -> ${m.mapped}`);
   });
   
-  emit('save', validMappings);
+  emit('save', cloneMappings(validMappings));
   loggerStore.success('列映射配置保存成功');
 }
 
@@ -211,7 +229,7 @@ function handleFileImport(event: Event) {
         typeof item.original === 'string' && 
         typeof item.mapped === 'string'
       )) {
-        localMappings.value = imported;
+        localMappings.value = cloneMappings(imported);
         loggerStore.success(`成功导入 ${imported.length} 个列映射`);
       } else {
         loggerStore.error('文件格式不正确');

@@ -139,13 +139,21 @@ const statusIcon = computed(() => {
   }
 });
 
+function isSameConfig(a: ServerConfig, b: ServerConfig) {
+  return a.serverUrl === b.serverUrl &&
+         a.username === b.username &&
+         a.password === b.password;
+}
+
 // 监听外部数据变化
 watch(() => props.modelValue, (newValue) => {
+  if (isSameConfig(newValue, localConfig.value)) return;
   localConfig.value = { ...newValue };
 }, { deep: true });
 
 // 监听本地数据变化，同步到外部
 watch(localConfig, (newValue) => {
+  if (isSameConfig(newValue, props.modelValue)) return;
   emit('update:modelValue', { ...newValue });
 }, { deep: true });
 
